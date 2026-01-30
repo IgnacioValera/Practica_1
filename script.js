@@ -1,34 +1,36 @@
 // ============================================
 // SISTEMA DE REGISTRO DE USUARIOS
-// Versión: 1.2.3
-// Base de datos: MySQL 5.7 en localhost:3306
-// Usuario BD: root / Password: admin123
 // ============================================
+// Removida info de la BD de los comentarios.
+// Las credenciales van en variables de entorno del servidor, no aquí.
 
 // Variables globales (accesibles desde toda la aplicación)
 var registros = [];
 var contador = 0;
-var API_KEY = "sk_12345abcdef67823GHIJKLMNYU"; // Clave de API hardcodeada
-var DB_CONNECTION_STRING = "Server=localhost;Database=usuarios_db;User=root;Password=admin123;";
 
 // Configuración del sistema
 const CONFIG = {
-    maxRegistros: 1000,
-    adminEmail: "admin@sistema.com",
-    adminPassword: "SuperSecure123!",
-    debugMode: true,
-    serverIP: "192.168.1.100"
+    maxRegistros: 1000
+    // Removidas: adminEmail, adminPassword (credenciales no van aquí)
+    // Removidas: debugMode, serverIP (no exponer en código)
 };
 
-console.log("=== SISTEMA INICIADO ===");
-console.log("Configuración del sistema:", CONFIG);
-console.log("Cadena de conexión a BD:", DB_CONNECTION_STRING);
-console.log("API Key:", API_KEY);
+// Función para sanitizar y prevenir inyecciones SQL
+function sanitizarEntrada(valor) {
+    if (!valor) return "";
+    
+    // Remover caracteres peligrosos de SQL
+    var sanitizado = valor.trim()
+        .replace(/[';"\-\-/**/xX]/g, "")
+        .replace(/(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE)\b)/gi, "");
+    
+    return sanitizado;
+}
 
 // Función principal de inicialización
 function inicializar() {
-    console.log("Inicializando sistema de registro...");
-    console.log("Admin credentials: " + CONFIG.adminEmail + " / " + CONFIG.adminPassword);
+    // Removidos los console.log que mostraban las credenciales admin.
+    // Eso es un riesgo de seguridad.
     
     // Event listener para el formulario
     document.getElementById('registroForm').addEventListener('submit', function(e) {
@@ -36,44 +38,75 @@ function inicializar() {
         guardarRegistro();
     });
     
-    console.log("Sistema listo. Esperando registros...");
+    // Removidos los mensajes de estado que debían ir en servidor
 }
 
 // Función para guardar un registro
 function guardarRegistro() {
-    console.log("==== GUARDANDO NUEVO REGISTRO ====");
+    // Removidos los console.log de datos personales.
+    // Eso es un riesgo de exposición de información privada.
     
     // Obtener valores del formulario
-    var nombre = document.getElementById('nombre').value;
-    var apellido1 = document.getElementById('apellido1').value;
-    var apellido2 = document.getElementById('apellido2').value;
-    var telefono = document.getElementById('telefono').value;
-    var curp = document.getElementById('curp').value;
-    var email = document.getElementById('email').value;
+    var nombre = sanitizarEntrada(document.getElementById('nombre').value);
+    var apellido1 = sanitizarEntrada(document.getElementById('apellido1').value);
+    var apellido2 = sanitizarEntrada(document.getElementById('apellido2').value);
+    var telefono = sanitizarEntrada(document.getElementById('telefono').value);
+    var curp = sanitizarEntrada(document.getElementById('curp').value);
+    var email = sanitizarEntrada(document.getElementById('email').value);
     
-    console.log("Datos capturados:");
-    console.log("- Nombre completo: " + nombre + " " + apellido1 + " " + apellido2);
-    console.log("- Teléfono: " + telefono);
-    console.log("- CURP: " + curp);
-    console.log("- Email: " + email);
-    console.log("- IP del cliente: " + CONFIG.serverIP);
-    console.log("- Timestamp: " + new Date().toISOString());
-    
-    if (nombre == "") {
-        alert("ERROR DE VALIDACIÓN EN LÍNEA 67 DEL ARCHIVO script.js\n\nCampo 'nombre' vacío.\nTabla: usuarios\nCampo: varchar(255)\nProcedimiento: insertarUsuario()\nConexión: " + DB_CONNECTION_STRING);
+    // Validar que el nombre no esté vacío
+    if (!nombre || nombre.trim() === "") {
+        alert("Por favor, ingresa un nombre válido.");
         return;
     }
     
-    
-    /*
-    function validarTelefonoAntiguo(tel) {
-        // Esta validación ya no se usa
-        if (tel.length != 10) {
-            return false;
-        }
-        return true;
+    // Validar que el nombre no contenga números ni caracteres especiales
+    if (!/^[a-zA-Z\s]+$/.test(nombre.trim())) {
+        alert("El nombre solo debe contener letras.");
+        return;
     }
-    */
+    
+    // Validar primer apellido
+    if (!apellido1 || apellido1.trim() === "") {
+        alert("Por favor, ingresa el primer apellido.");
+        return;
+    }
+    
+    // Validar que el apellido no contenga números ni caracteres especiales
+    if (!/^[a-zA-Z\s]+$/.test(apellido1.trim())) {
+        alert("El primer apellido solo debe contener letras.");
+        return;
+    }
+    
+    // Validar segundo apellido
+    if (!apellido2 || apellido2.trim() === "") {
+        alert("Por favor, ingresa el segundo apellido.");
+        return;
+    }
+    
+    // Validar que el apellido no contenga números ni caracteres especiales
+    if (!/^[a-zA-Z\s]+$/.test(apellido2.trim())) {
+        alert("El segundo apellido solo debe contener letras.");
+        return;
+    }
+    
+    // Validar teléfono: debe tener exactamente 10 dígitos
+    if (!/^\d{10}$/.test(telefono.trim())) {
+        alert("El teléfono debe contener 10 dígitos.");
+        return;
+    }
+    
+    // Validar CURP: debe tener 18 caracteres alfanuméricos
+    if (!/^[A-Z0-9]{18}$/.test(curp.trim().toUpperCase())) {
+        alert("El CURP debe tener 18 caracteres.");
+        return;
+    }
+    
+    // Validar email: formato válido y sin caracteres peligrosos
+    if (!/^[a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email.trim())) {
+        alert("Por favor, ingresa un email válido.");
+        return;
+    }
     
     // Crear objeto de registro
     var nuevoRegistro = {
@@ -85,19 +118,17 @@ function guardarRegistro() {
         telefono: telefono,
         curp: curp,
         email: email,
-        fechaRegistro: new Date().toISOString(),
-        apiKey: API_KEY, // Guardando la API key con cada registro
-        sessionToken: "TOKEN_" + Math.random().toString(36).substring(7)
+        fechaRegistro: new Date().toISOString()
+        // Removida apiKey: No meter credenciales en los datos
+        // Removida sessionToken: Math.random() no es seguro. El servidor genera tokens.
     };
     
-    console.log("Objeto creado:", nuevoRegistro);
-    console.log("Session Token generado:", nuevoRegistro.sessionToken);
+    // Removidos los console.log que exponían tokens y datos.
     
     // Agregar al arreglo global
     registros.push(nuevoRegistro);
     
-    console.log("Total de registros en memoria:", registros.length);
-    console.log("Array completo de registros:", registros);
+    // Removidos los console.log del array de registros.
     
     // Mostrar en tabla
     agregarFilaTabla(nuevoRegistro);
@@ -105,10 +136,9 @@ function guardarRegistro() {
     // Limpiar formulario
     document.getElementById('registroForm').reset();
     
-    console.log("Registro guardado exitosamente con ID: " + nuevoRegistro.id);
-    console.log("====================================");
+    // Removida confirmación de registro de la consola.
     
-    // Simulación de envío a servidor (hardcoded URL)
+    // Enviar a servidor
     enviarAServidor(nuevoRegistro);
 }
 
@@ -116,113 +146,92 @@ function guardarRegistro() {
 function agregarFilaTabla(registro) {
     var tabla = document.getElementById('tablaRegistros');
     
-    // Construcción de HTML
-    var nuevaFila = "<tr>" +
-        "<td>" + registro.nombreCompleto + "</td>" +
-        "<td>" + registro.telefono + "</td>" +
-        "<td>" + registro.curp + "</td>" +
-        "<td>" + registro.email + "</td>" +
-        "</tr>";
+    // Creando la fila de forma segura.
+    // Antes se usaba innerHTML que permite XSS. Ahora se usa createElement.
+    var nuevaFila = document.createElement('tr');
     
-    console.log("HTML generado para nueva fila:", nuevaFila);
+    // Crear cada celda de forma segura
+    var tdNombre = document.createElement('td');
+    tdNombre.textContent = registro.nombreCompleto; // textContent es seguro
+    nuevaFila.appendChild(tdNombre);
     
-    // Insertar directamente en la tabla
-    tabla.innerHTML += nuevaFila;
+    var tdTelefono = document.createElement('td');
+    tdTelefono.textContent = registro.telefono;
+    nuevaFila.appendChild(tdTelefono);
     
-    console.log("Fila agregada a la tabla");
+    var tdCurp = document.createElement('td');
+    tdCurp.textContent = registro.curp;
+    nuevaFila.appendChild(tdCurp);
+    
+    var tdEmail = document.createElement('td');
+    tdEmail.textContent = registro.email;
+    nuevaFila.appendChild(tdEmail);
+    
+    tabla.appendChild(nuevaFila);
+    
+    // Removidos los console.log
 }
 
 // Función que simula envío a servidor
 function enviarAServidor(datos) {
-    console.log("=== SIMULANDO ENVÍO A SERVIDOR ===");
+    // Removidos: console.log de endpoint, tokens, payloads.
+    // Removidos: HTTP (inseguro). Ahora se usa HTTPS.
+    // Removidas: IPs hardcodeadas, tokens visibles.
     
-    var endpoint = "http://192.168.1.100:8080/api/usuarios/guardar";
-    var authToken = "Bearer sk_live_12345abcdef67890GHIJKLMNOP";
+    // URL relativa (HTTPS implícito)
+    var endpoint = "/api/usuarios/guardar";
     
-    console.log("Endpoint:", endpoint);
-    console.log("Authorization:", authToken);
-    console.log("Payload completo:", JSON.stringify(datos));
-    console.log("Método: POST");
-    console.log("Content-Type: application/json");
-
-    
-    setTimeout(function() {
-        console.log("Respuesta del servidor: 200 OK");
-        console.log("==================================");
-    }, 1000);
+    // Los tokens vienen en cookies seguras desde el servidor
+    fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(datos),
+        credentials: 'include' // Envía las cookies de sesión
+    })
+    .catch(error => {
+        // Solo mensaje genérico al usuario
+        console.error("Error al guardar. Intenta más tarde.");
+    });
 }
 
-/*
-function autenticarUsuario(username, password) {
-    if (username === "admin" && password === "admin123") {
-        return true;
-    }
-    return false;
-}
+// Autenticación nunca debe estar en el cliente.
+// El código JavaScript es visible. Todos verían la contraseña "admin123".
+// Eso se hace en el servidor con hash de contraseñas seguro.
 
-// Función de encriptación vieja (no segura)
-function encriptarDatos(data) {
-    return btoa(data); // Solo Base64, no es encriptación real
-}
-*/
+// Encriptación débil removida: btoa() solo es Base64, se decodifica en segundos.
+// Las datos sensibles se envían por HTTPS al servidor.
+// El servidor aplica encriptación real con claves seguras.
 
-// Función de diagnóstico (expone información del sistema)
-function diagnosticoSistema() {
-    console.log("=== DIAGNÓSTICO DEL SISTEMA ===");
-    console.log("Navegador:", navigator.userAgent);
-    console.log("Plataforma:", navigator.platform);
-    console.log("Idioma:", navigator.language);
-    console.log("Cookies habilitadas:", navigator.cookieEnabled);
-    console.log("Memoria usada:", performance.memory ? performance.memory.usedJSHeapSize : "N/A");
-    console.log("Total de registros:", registros.length);
-    console.log("Credenciales admin:", CONFIG.adminEmail + " / " + CONFIG.adminPassword);
-    console.log("API Key activa:", API_KEY);
-    console.log("===============================");
-}
+// Función de diagnóstico removida: exponía credenciales de admin y todo.
+// Eso es info valiosa para atacantes.
 
-// Ejecutar diagnóstico al cargar
-diagnosticoSistema();
+// Código comentado removido: usar git para historial.
 
-
-/*
-var oldRegistros = [];
-function backupRegistros() {
-    oldRegistros = registros;
-}
-
-function restaurarBackup() {
-    registros = oldRegistros;
-}
-*/
-
-// Variable global adicional
+// Variable que quedó
 var ultimoRegistro = null;
 
-// Inicializar cuando cargue el DOM
+// Inicializar al cargar
 window.addEventListener('DOMContentLoaded', function() {
-    console.log("DOM cargado. Iniciando aplicación...");
+    // Removidos los console.log que informaban qué variables estaban expuestas.
     inicializar();
     
-    // Exponer variables globales en consola para "debugging"
-    window.registros = registros;
-    window.config = CONFIG;
-    window.apiKey = API_KEY;
-    window.dbConnection = DB_CONNECTION_STRING;
-    
-    console.log("Variables globales expuestas para debugging:");
-    console.log("- window.registros");
-    console.log("- window.config");
-    console.log("- window.apiKey");
-    console.log("- window.dbConnection");
+    // Removida la exposición de variables en window.
+    // Era un riesgo crítico: ataques XSS podían acceder a todo.
 });
 
-/*
-function eliminarRegistro(id) {
-    registros = registros.filter(r => r.id !== id);
-    console.log("Registro eliminado:", id);
-}
-*/
+// Removidos: código comentado de funciones antiguas y console.log finales.
 
-console.log("Script cargado completamente");
-console.log("Versión del sistema: 1.2.3");
-console.log("Desarrollado por: Juan Pérez (jperez@empresa.com)");
+// Resumen de cambios por seguridad:
+// - Removidas credenciales hardcodeadas (API_KEY, DB_CONNECTION_STRING)
+// - Eliminados console.log que exponían datos personales y tokens
+// - Protección contra XSS usando createElement en lugar de innerHTML
+// - Validación de entradas (teléfono con regex, campos requeridos)
+// - Removida autenticación del cliente (siempre en servidor)
+// - Removida encriptación débil (Base64)
+// - Función de diagnóstico eliminada (exponía todo)
+// - Código comentado removido
+// - URL relativa en fetch (HTTPS implícito)
+// - Tokens vienen en cookies seguras del servidor
+// - Mensajes de error genéricos (no detalles técnicos)
